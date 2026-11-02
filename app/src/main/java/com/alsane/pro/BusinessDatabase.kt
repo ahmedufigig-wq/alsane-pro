@@ -18,11 +18,20 @@ data class Product(
 
 @Dao
 interface ProductDao {
-    @Query("SELECT * FROM products ORDER BY name COLLATE NOCASE") fun observeAll(): Flow<List<Product>>
-    @Query("SELECT COUNT(*) FROM products") fun observeCount(): Flow<Int>
-    @Query("SELECT COALESCE(SUM(quantity * purchasePrice), 0) FROM products") fun observeStockCostValue(): Flow<Long>
+    @Query("SELECT * FROM products ORDER BY name COLLATE NOCASE")
+    fun observeAll(): Flow<List<Product>>
+    @Query("SELECT COUNT(*) FROM products")
+    fun observeCount(): Flow<Int>
+    @Query("SELECT COALESCE(SUM(quantity * purchasePrice), 0) FROM products")
+    fun observeStockCostValue(): Flow<Long>
+    @Query("SELECT COUNT(*) FROM products WHERE quantity <= lowStockLimit")
+    fun observeLowStockCount(): Flow<Int>
+    @Query("SELECT * FROM products WHERE code = :code AND code != '' LIMIT 1")
+    suspend fun findByCode(code: String): Product?
     @Insert suspend fun insert(product: Product): Long
-    @Query("DELETE FROM products WHERE id = :id") suspend fun deleteById(id: Long)
+    @Update suspend fun update(product: Product): Int
+    @Query("DELETE FROM products WHERE id = :id")
+    suspend fun deleteById(id: Long): Int
 }
 
 @Database(entities = [Product::class], version = 1, exportSchema = true)
@@ -31,7 +40,7 @@ abstract class BusinessDatabase : RoomDatabase() {
     companion object {
         @Volatile private var instance: BusinessDatabase? = null
         fun get(context: Context): BusinessDatabase = instance ?: synchronized(this) {
-            instance ?: Room.databaseBuilder(context.applicationContext, BusinessDatabase::class.java, "alsane_business.db")
+            instance ?: Room.databaseBuilder(context.applicationContext, BusinessDatabase::class.java, "mohasabi_business.db")
                 .build().also { instance = it }
         }
     }
